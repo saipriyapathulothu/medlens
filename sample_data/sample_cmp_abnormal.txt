@@ -1,0 +1,31 @@
+METROHEALTH DIAGNOSTIC LABORATORIES
+100 Medical Center Way, Suite 400
+CLIA ID: 99D1234567 | Lab Director: R. Sterling, MD
+
+PATIENT INFORMATION:
+Name: Jane Doe
+DOB: 1988-04-12 | Age: 38 | Sex: Female
+Specimen ID: SP-2026-9042
+Collection Date: 2026-09-01 07:45 AM
+Report Date: 2026-09-01 01:20 PM
+Ordering Physician: Dr. Alex Rivera, MD
+
+TEST NAME                       RESULT    FLAG    UNITS       REFERENCE RANGE
+-----------------------------------------------------------------------------
+COMPREHENSIVE METABOLIC PANEL (CMP)
+Fasting Blood Glucose            145      HIGH    mg/dL       70 - 99
+Blood Urea Nitrogen (BUN)        16               mg/dL       7 - 20
+Serum Creatinine                 0.9              mg/dL       0.6 - 1.2
+eGFR Non-African Amer            98               mL/min/1.73 > 60
+Sodium                           140              mmol/L      136 - 145
+Potassium                        3.2      LOW     mmol/L      3.5 - 5.1
+Chloride                         102              mmol/L      98 - 107
+Carbon Dioxide (CO2)             25               mmol/L      22 - 29
+Calcium                          9.4              mg/dL       8.6 - 10.2
+Total Protein                    7.1              g/dL        6.4 - 8.3
+Albumin                          4.3              g/dL        3.5 - 5.0
+
+OBSERVATIONS:
+Fasting glucose is elevated relative to reference interval.
+Potassium is mildly decreased relative to reference interval.
+Recommend clinical correlation.

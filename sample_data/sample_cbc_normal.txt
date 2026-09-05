@@ -1,0 +1,25 @@
+METROHEALTH DIAGNOSTIC LABORATORIES
+100 Medical Center Way, Suite 400
+CLIA ID: 99D1234567 | Lab Director: R. Sterling, MD
+
+PATIENT INFORMATION:
+Name: Jane Doe
+DOB: 1988-04-12 | Age: 38 | Sex: Female
+Specimen ID: SP-2026-8831
+Collection Date: 2026-08-15 08:30 AM
+Report Date: 2026-08-15 02:15 PM
+Ordering Physician: Dr. Alex Rivera, MD
+
+TEST NAME                       RESULT    FLAG    UNITS       REFERENCE RANGE
+-----------------------------------------------------------------------------
+COMPLETE BLOOD COUNT (CBC)
+White Blood Cells (WBC)          6.2              10^3/uL     4.5 - 11.0
+Red Blood Cells (RBC)            4.45             10^6/uL     4.00 - 5.20
+Hemoglobin                       13.8             g/dL        12.0 - 16.0
+Hematocrit                       41.2             %           37.0 - 47.0
+Mean Corpuscular Volume (MCV)    88.5             fL          80.0 - 100.0
+Platelets                        265              10^3/uL     150 - 450
+
+OBSERVATIONS:
+All hematology parameters fall within the laboratory's established reference ranges.
+Specimen integrity: Normal. No hemolysis detected.

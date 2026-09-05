@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedLens — AI-Powered Clinical Information Intelligence</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            medblue: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e'
+            },
+            teal: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- 1. MANDATORY CLINICAL SAFETY DISCLAIMER    -->
+  <!-- ========================================== -->
+  <div class="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-white px-4 py-2 text-xs font-semibold tracking-wide shadow-sm flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center space-x-2 mx-auto text-center">
+      <i data-lucide="shield-alert" class="w-4 h-4 flex-shrink-0 text-amber-100"></i>
+      <span>
+        <strong>CLINICAL SAFETY MANDATE:</strong> MedLens is an information organization and review tool. It does <u>not</u> provide medical diagnoses or treatment recommendations. All laboratory findings and summaries must be reviewed by a licensed healthcare professional.
+      </span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. HEADER & NAVIGATION BAR                -->
+  <!-- ========================================== -->
+  <header class="bg-white border-b border-slate-200 sticky top-8 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Name -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('dashboard')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20">
+            <i data-lucide="cross" class="w-5 h-5 stroke-[2.5]"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-teal-800 to-teal-600 bg-clip-text text-transparent">MedLens</span>
+              <span class="bg-teal-50 text-teal-700 border border-teal-200/80 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v2.5 Hackathon MVP</span>
+            </div>
+            <p class="text-[11px] text-slate-500 hidden sm:block">AI-Powered Clinical Information Intelligence</p>
+          </div>
+        </div>
+
+        <!-- Center Patient Switcher, Add Patient Button & Live Engine Status -->
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-1 text-xs">
+            <span class="text-slate-500 px-2 font-medium flex items-center gap-1">
+              <i data-lucide="user" class="w-3.5 h-3.5"></i> Patient:
+            </span>
+            <select id="patientSelect" onchange="handlePatientChange(this.value)" class="bg-white border border-slate-300 text-slate-800 rounded px-2 py-1 font-semibold focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer text-xs">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Add Patient Button -->
+          <button onclick="openAddPatientModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold shadow-xs transition" title="Register New Patient">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Add Patient</span>
+          </button>
+
+          <!-- Deterministic Range Status -->
+          <div class="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Range Engine: <strong>Deterministic (Zero Hallucination)</strong></span>
+          </div>
+        </div>
+
+        <!-- Right Side Export & Reset -->
+        <div class="flex items-center space-x-2">
+          <button onclick="downloadClinicalPDF()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-xs transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Export PDF</span>
+          </button>
+          <button onclick="resetDemoData()" title="Reset to Factory State" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-1 overflow-x-auto custom-scroll pb-1 text-xs font-medium border-t border-slate-100 pt-1">
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap bg-teal-50 text-teal-700 font-semibold border-b-2 border-teal-600">
+          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Dashboard
+        </button>
+        <button onclick="switchView('intake')" id="nav-intake" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Patient Intake
+        </button>
+        <button onclick="switchView('upload')" id="nav-upload" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="file-up" class="w-3.5 h-3.5"></i> Upload & OCR
+        </button>
+        <button onclick="switchView('records')" id="nav-records" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="table-2" class="w-3.5 h-3.5"></i> Structured Records
+        </button>
+        <button onclick="switchView('review')" id="nav-review" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Review Queue <span id="review-badge" class="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold">2</span>
+        </button>
+        <button onclick="switchView('conflicts')" id="nav-conflicts" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Conflicts <span id="conflict-badge" class="bg-rose-100 text-rose-800 text-[10px] px-1.5 py-0.2 rounded-full font-bold">1</span>
+        </button>
+        <button onclick="switchView('verification')" id="nav-verification" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="split-square-vertical" class="w-3.5 h-3.5"></i> Side-by-Side Source
+        </button>
+        <button onclick="switchView('summary')" id="nav-summary" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="bot" class="w-3.5 h-3.5"></i> AI Clinical Summary
+        </button>
+        <button onclick="switchView('trajectory')" id="nav-trajectory" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Multi-Report Trajectory
+        </button>
+        <button onclick="switchView('timeline')" id="nav-timeline" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="history" class="w-3.5 h-3.5"></i> Audit Timeline
+        </button>
+        <button onclick="switchView('ethics')" id="nav-ethics" class="nav-btn px-3 py-2 rounded-md transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-50">
+          <i data-lucide="scale" class="w-3.5 h-3.5"></i> Responsible AI
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 3. MAIN CONTENT CONTAINER                  -->
+  <!-- ========================================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- VIEW 1: DASHBOARD -->
+    <section id="view-dashboard" class="space-y-6">
+      <!-- Active Patient Overview Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute right-0 top-0 bottom-0 opacity-10 flex items-center pr-12 pointer-events-none">
+          <i data-lucide="activity" class="w-64 h-64 text-teal-300"></i>
+        </div>
+        <div class="relative z-10 max-w-3xl">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold border border-teal-500/30">
+              <span class="w-2 h-2 rounded-full bg-teal-400"></span> Active Patient Session
+            </span>
+            <span id="dash-patient-tag" class="bg-blue-500/20 text-blue-300 text-xs px-2.5 py-1 rounded-full font-mono border border-blue-500/30">USER_PROVIDED</span>
+          </div>
+          <h1 id="dash-patient-name" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Sarah Jenkins</h1>
+          <p id="dash-patient-sub" class="text-slate-300 text-sm mt-1">45 Years • Female • DOB: 1980-04-12 • Record ID: #ML-2026-089</p>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span id="dash-conditions" class="bg-white/10 px-3 py-1 rounded-lg"><strong>Conditions:</strong> Hypertension, Pre-diabetes</span>
+            <span id="dash-allergies" class="bg-white/10 px-3 py-1 rounded-lg"><strong>Allergies:</strong> Penicillin (Severe hives)</span>
+            <span id="dash-medications" class="bg-white/10 px-3 py-1 rounded-lg"><strong>Medications:</strong> Lisinopril 10mg, Metformin 500mg</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discrepancy / Conflict Notice -->
+      <div id="dash-conflict-alert" class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-xl shadow-xs flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 flex-shrink-0">
+            <i data-lucide="alert-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-rose-900">1 Unresolved Intake vs. Report Contradiction</h4>
+            <p class="text-xs text-rose-700">Patient intake records age as <strong>45 years</strong>, but uploaded CMP report header specifies <strong>47 years</strong>.</p>
+          </div>
+        </div>
+        <button onclick="switchView('conflicts')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-xs">
+          Resolve Conflict <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Metrics Grid (Now 5 Columns including Registered Patients Count) -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Card 1: TOTAL PATIENTS REGISTERED -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Patients</span>
+            <button onclick="openAddPatientModal()" class="p-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition" title="Add Patient">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="mt-3">
+            <div id="metric-total-patients" class="text-2xl font-black text-teal-700">2</div>
+            <div class="text-[11px] text-slate-500 mt-0.5 flex items-center justify-between">
+              <span>Active Profiles</span>
+              <button onclick="openAddPatientModal()" class="text-teal-600 font-bold hover:underline">+ Add New</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: TOTAL LAB TESTS -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Tests</span>
+            <button onclick="openAddTestModal()" class="p-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition" title="Add Lab Test">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="mt-3">
+            <div id="metric-total-tests" class="text-2xl font-black text-slate-900">13</div>
+            <div class="text-[11px] text-slate-500 mt-0.5 flex items-center justify-between">
+              <span>For active patient</span>
+              <button onclick="openAddTestModal()" class="text-teal-600 font-bold hover:underline">+ Add Test</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: ABNORMAL VALUES -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Abnormal Values</span>
+            <span class="p-2 rounded-lg bg-rose-50 text-rose-600"><i data-lucide="alert-octagon" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-3">
+            <div id="metric-abnormal" class="text-2xl font-black text-rose-600">2</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Evaluated against source</div>
+          </div>
+        </div>
+
+        <!-- Card 4: DATA COMPLETENESS -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Completeness</span>
+            <span class="p-2 rounded-lg bg-blue-50 text-blue-600"><i data-lucide="pie-chart" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <div id="metric-completeness" class="text-2xl font-black text-blue-600">85%</div>
+              <span class="text-[10px] text-slate-400">Score</span>
+            </div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div class="bg-blue-600 h-1.5 rounded-full" style="width: 85%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: PROVENANCE CITATIONS -->
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-xs col-span-2 lg:col-span-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Provenance</span>
+            <span class="p-2 rounded-lg bg-emerald-50 text-emerald-600"><i data-lucide="file-check" class="w-4 h-4"></i></span>
+          </div>
+          <div class="mt-3">
+            <div id="metric-provenance" class="text-2xl font-black text-emerald-600">100%</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">Linked to source text</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- NEW: PATIENT RECORDS DIRECTORY TABLE                     -->
+      <!-- ========================================================= -->
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-teal-600"></i>
+              Registered Patient Records (<span id="directory-patient-count">2</span>)
+            </h3>
+            <p class="text-xs text-slate-500">Select any patient profile or click "+ Add New Patient" to register a new intake</p>
+          </div>
+          <button onclick="openAddPatientModal()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition self-start sm:self-auto">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Register New Patient
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Patient Name & ID</th>
+                <th class="py-3 px-4">Age / Sex / DOB</th>
+                <th class="py-3 px-4">Existing Conditions</th>
+                <th class="py-3 px-4">Lab Tests</th>
+                <th class="py-3 px-4">Session Status</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="patient-directory-tbody" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick Action Workflows -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div onclick="switchView('upload')" class="bg-white hover:bg-slate-50 p-5 rounded-xl border border-slate-200 transition cursor-pointer group shadow-xs">
+          <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center mb-3 group-hover:scale-105 transition">
+            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900 group-hover:text-teal-700">1. Ingest Medical Report</h3>
+          <p class="text-xs text-slate-500 mt-1">Upload PDF, JPG or PNG with instant OCR text extraction & bounding box alignment.</p>
+        </div>
+
+        <div onclick="switchView('records')" class="bg-white hover:bg-slate-50 p-5 rounded-xl border border-slate-200 transition cursor-pointer group shadow-xs">
+          <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mb-3 group-hover:scale-105 transition">
+            <i data-lucide="table-properties" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900 group-hover:text-indigo-700">2. Inspect Structured Records</h3>
+          <p class="text-xs text-slate-500 mt-1">Strict reference-interval evaluation tags values as Normal, High, Low, or Unknown.</p>
+        </div>
+
+        <div onclick="switchView('summary')" class="bg-white hover:bg-slate-50 p-5 rounded-xl border border-slate-200 transition cursor-pointer group shadow-xs">
+          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 group-hover:scale-105 transition">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900 group-hover:text-purple-700">3. Non-Diagnostic AI Briefing</h3>
+          <p class="text-xs text-slate-500 mt-1">Plain-language patient summary with curated questions to discuss with a physician.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: PATIENT INTAKE -->
+    <section id="view-intake" class="space-y-6 hidden">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Patient Information Intake</h2>
+          <p class="text-xs text-slate-500">Provenance is strictly tagged as <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono font-bold">USER_PROVIDED</span></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAddPatientModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> + New Patient
+          </button>
+          <button onclick="savePatientIntake()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i> Save Changes
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+            <input type="text" id="intake-name" value="Sarah Jenkins" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Age</label>
+            <input type="number" id="intake-age" value="45" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Sex</label>
+            <select id="intake-sex" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">
+              <option value="Female" selected>Female</option>
+              <option value="Male">Male</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Current Symptoms</label>
+          <input type="text" id="intake-symptoms" value="Persistent fatigue, increased thirst (polydipsia), mild morning stiffness" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Existing Conditions</label>
+            <textarea id="intake-conditions" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">Essential Hypertension (dx 2021)
+Pre-diabetes / Impaired Fasting Glucose (dx 2023)</textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Known Allergies</label>
+            <textarea id="intake-allergies" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">Penicillin (Severe urticaria/hives)
+Latex (Mild contact dermatitis)</textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Current Medications</label>
+            <textarea id="intake-meds" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none">Lisinopril 10mg PO once daily (morning)
+Metformin 500mg PO twice daily with meals</textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: UPLOAD & OCR EXTRACTION -->
+    <section id="view-upload" class="space-y-6 hidden">
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Medical Report Ingestion & OCR</h2>
+        <p class="text-xs text-slate-500">Upload PDF lab sheets, scans (JPG/PNG), or click a pre-loaded demonstrator below for immediate evaluation.</p>
+      </div>
+
+      <!-- 3 Demo Fast-Load Buttons -->
+      <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2 text-xs font-bold text-teal-900">
+          <i data-lucide="zap" class="w-4 h-4 text-teal-600"></i>
+          1-Click Synthetic Demonstrators (Instant Demo Loaders):
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onclick="loadDemoReport('cbc')" class="px-3 py-2.5 bg-white hover:bg-teal-100/50 border border-teal-300 text-teal-800 rounded-lg text-xs font-semibold text-left transition flex flex-col shadow-2xs">
+            <span class="font-bold flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> 1. CBC Normal Panel</span>
+            <span class="text-[10px] text-slate-500 font-normal mt-0.5">WBC, RBC, Hemoglobin, Hematocrit, Platelets (All Normal)</span>
+          </button>
+          <button onclick="loadDemoReport('cmp')" class="px-3 py-2.5 bg-white hover:bg-teal-100/50 border border-teal-300 text-teal-800 rounded-lg text-xs font-semibold text-left transition flex flex-col shadow-2xs">
+            <span class="font-bold flex items-center gap-1 text-rose-700"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> 2. CMP Abnormal Panel</span>
+            <span class="text-[10px] text-slate-500 font-normal mt-0.5">High Glucose (145), Low Potassium (3.2), Age Mismatch (47)</span>
+          </button>
+          <button onclick="loadDemoReport('lipid')" class="px-3 py-2.5 bg-white hover:bg-teal-100/50 border border-teal-300 text-teal-800 rounded-lg text-xs font-semibold text-left transition flex flex-col shadow-2xs">
+            <span class="font-bold flex items-center gap-1 text-amber-700"><i data-lucide="help-circle" class="w-3.5 h-3.5"></i> 3. Lipid Panel (Ambiguous)</span>
+            <span class="text-[10px] text-slate-500 font-normal mt-0.5">Triglycerides missing reference range &rarr; Flags UNKNOWN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-teal-500 bg-white rounded-2xl p-10 text-center transition cursor-pointer group shadow-xs">
+        <input type="file" id="file-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
+        <div class="max-w-md mx-auto flex flex-col items-center">
+          <div class="w-16 h-16 rounded-2xl bg-slate-100 group-hover:bg-teal-50 text-slate-400 group-hover:text-teal-600 flex items-center justify-center transition">
+            <i data-lucide="upload" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-sm font-bold text-slate-900 mt-4">Drop your clinical laboratory document here</h3>
+          <p class="text-xs text-slate-500 mt-1">Supports digital PDFs, scanned images, or photographs (PDF, JPG, PNG up to 25MB)</p>
+          <button onclick="document.getElementById('file-input').click()" class="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition">
+            Browse Files on Computer
+          </button>
+        </div>
+      </div>
+
+      <!-- Processing Status Modal Simulation -->
+      <div id="processing-box" class="bg-white rounded-xl border border-slate-200 p-6 shadow-md hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="loader" class="w-4 h-4 text-teal-600 animate-spin"></i>
+            Ingesting & Structuring Document...
+          </h4>
+          <span id="proc-percent" class="text-xs font-mono font-bold text-teal-700">65%</span>
+        </div>
+        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+          <div id="proc-bar" class="bg-teal-600 h-2 rounded-full transition-all duration-300" style="width: 65%"></div>
+        </div>
+        <div id="proc-step" class="text-xs text-slate-500 font-mono">Step 3/4: Executing Deterministic Reference Range Classifier...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: STRUCTURED MEDICAL RECORDS -->
+    <section id="view-records" class="space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Structured Medical Records</h2>
+          <p class="text-xs text-slate-500">Biomarkers parsed from verified source documents with strict reference bounds</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Filter buttons -->
+          <div class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 text-xs">
+            <button onclick="filterRecords('ALL')" id="filter-all" class="px-2.5 py-1 rounded bg-white font-semibold text-slate-800 shadow-2xs">All</button>
+            <button onclick="filterRecords('ABNORMAL')" id="filter-abnormal" class="px-2.5 py-1 rounded text-slate-600 hover:text-slate-900">Abnormal Only</button>
+            <button onclick="filterRecords('UNKNOWN')" id="filter-unknown" class="px-2.5 py-1 rounded text-slate-600 hover:text-slate-900">Unknown/Missing</button>
+          </div>
+          <button onclick="openAddTestModal()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> + Add Lab Test
+          </button>
+          <button onclick="downloadClinicalPDF()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Clinical PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- The Lab Results Table -->
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Test / Analyte Name</th>
+                <th class="py-3 px-4">Result Value</th>
+                <th class="py-3 px-4">Unit</th>
+                <th class="py-3 px-4">Source Reference Range</th>
+                <th class="py-3 px-4">Clinical Status</th>
+                <th class="py-3 px-4">Provenance Tag</th>
+                <th class="py-3 px-4 text-right">Verification</th>
+              </tr>
+            </thead>
+            <tbody id="lab-table-body" class="divide-y divide-slate-100">
+              <!-- Dynamically rendered by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: EXTRACTION REVIEW QUEUE -->
+    <section id="view-review" class="space-y-6 hidden">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Human-in-the-Loop Review Queue</h2>
+          <p class="text-xs text-slate-500">Validate AI-extracted fields before committing to permanent medical record</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="acceptAllQueue()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
+            <i data-lucide="check-check" class="w-3.5 h-3.5"></i> Accept All
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Review Item 1 -->
+        <div id="review-card-1" class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-slate-900">Glucose, Fasting</span>
+              <span class="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase">FLAGGED HIGH</span>
+              <span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded font-mono">OCR Conf: 98%</span>
+            </div>
+            <p class="text-xs text-slate-600">Extracted: <strong class="font-mono text-rose-600">145 mg/dL</strong> • Source Reference: <strong class="font-mono">70 - 99 mg/dL</strong></p>
+            <p class="text-[11px] text-slate-400">Source: <cite class="italic">CMP_Report_2026_02.pdf (Page 1, Line 14)</cite></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="acceptReviewItem(1)" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Accept
+            </button>
+            <button onclick="openEditModal('Glucose, Fasting', '145', 'mg/dL', '70 - 99')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
+            </button>
+            <button onclick="rejectReviewItem(1)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i> Reject
+            </button>
+          </div>
+        </div>
+
+        <!-- Review Item 2 -->
+        <div id="review-card-2" class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-slate-900">Potassium</span>
+              <span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase">FLAGGED LOW</span>
+              <span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded font-mono">OCR Conf: 96%</span>
+            </div>
+            <p class="text-xs text-slate-600">Extracted: <strong class="font-mono text-blue-600">3.2 mmol/L</strong> • Source Reference: <strong class="font-mono">3.5 - 5.1 mmol/L</strong></p>
+            <p class="text-[11px] text-slate-400">Source: <cite class="italic">CMP_Report_2026_02.pdf (Page 1, Line 16)</cite></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="acceptReviewItem(2)" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Accept
+            </button>
+            <button onclick="openEditModal('Potassium', '3.2', 'mmol/L', '3.5 - 5.1')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
+            </button>
+            <button onclick="rejectReviewItem(2)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i> Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: CONFLICT RESOLUTION -->
+    <section id="view-conflicts" class="space-y-6 hidden">
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Inconsistency & Conflict Detection</h2>
+        <p class="text-xs text-slate-500">Cross-examines patient questionnaire intake with uploaded laboratory metadata</p>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Conflict 1: Age Mismatch -->
+        <div id="conflict-card-1" class="bg-white rounded-xl border border-rose-200 p-6 shadow-xs space-y-4">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 bg-rose-100 text-rose-600 rounded-lg"><i data-lucide="alert-triangle" class="w-4 h-4"></i></span>
+              <h3 class="text-sm font-bold text-slate-900">Patient Demographic Mismatch: Age Discrepancy</h3>
+            </div>
+            <span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded">High Severity</span>
+          </div>
+
+          <p class="text-xs text-slate-600">
+            A mismatch was detected between the patient demographic intake form and the header metadata of the uploaded laboratory report.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-blue-50/60 border border-blue-200 p-4 rounded-xl">
+              <div class="flex items-center justify-between text-xs font-semibold text-blue-900 mb-1">
+                <span>Value in Patient Intake</span>
+                <span class="bg-blue-100 text-blue-700 text-[10px] px-1.5 rounded">USER_PROVIDED</span>
+              </div>
+              <div class="text-xl font-bold text-blue-900 font-mono">45 Years</div>
+              <div class="text-[11px] text-blue-700 mt-1">Submitted on 2026-09-05 via web intake portal</div>
+            </div>
+
+            <div class="bg-amber-50/60 border border-amber-200 p-4 rounded-xl">
+              <div class="flex items-center justify-between text-xs font-semibold text-amber-900 mb-1">
+                <span>Value in Report Header</span>
+                <span class="bg-amber-100 text-amber-700 text-[10px] px-1.5 rounded">REPORT_EXTRACTED</span>
+              </div>
+              <div class="text-xl font-bold text-amber-900 font-mono">47 Years</div>
+              <div class="text-[11px] text-amber-700 mt-1">Source: CMP_Report_2026_02.pdf (Page 1)</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button onclick="resolveConflict(1, 'intake')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition">
+              Keep Intake Age (45)
+            </button>
+            <button onclick="resolveConflict(1, 'report')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition">
+              Keep Report Age (47)
+            </button>
+            <button onclick="resolveConflict(1, 'dismiss')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">
+              Dismiss Flag
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 7: SIDE-BY-SIDE SOURCE VERIFICATION -->
+    <section id="view-verification" class="space-y-6 hidden">
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Side-by-Side Source Verification</h2>
+        <p class="text-xs text-slate-500">Audit extracted structured data directly against original document OCR text</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left: Raw Extracted Document OCR -->
+        <div class="bg-slate-900 text-slate-100 rounded-xl p-5 shadow-xs font-mono text-xs space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-slate-400">
+            <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-4 h-4"></i> Raw Source Text Snippet</span>
+            <span class="bg-slate-800 px-2 py-0.5 rounded text-[10px]">CMP_Report_2026_02.pdf (Page 1)</span>
+          </div>
+          <pre class="overflow-x-auto text-[11px] leading-relaxed text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800 custom-scroll">
+METABOLIC PANEL, COMPREHENSIVE
+Patient: JENKINS, SARAH      DOB: 04/12/1979    Age: 47
+Date Collected: 02/14/2026 08:30 AM
+Fasting: YES (12 Hours)
+
+TEST NAME            RESULT    FLAG    REFERENCE RANGE    UNITS
+---------------------------------------------------------------
+Sodium               139               136 - 145          mmol/L
+Potassium            3.2       LOW     3.5 - 5.1          mmol/L
+Chloride             101               98 - 107           mmol/L
+Carbon Dioxide       24                22 - 29            mmol/L
+Glucose, Fasting     145       HIGH    70 - 99            mg/dL
+BUN                  16                7 - 20             mg/dL
+Creatinine           0.85              0.50 - 1.10        mg/dL
+eGFR Non-Afr. Amer   88                > 60               mL/min/1.73m2
+Calcium              9.4               8.6 - 10.2         mg/dL
+Total Protein        7.1               6.4 - 8.3          g/dL
+Albumin              4.2               3.5 - 5.0          g/dL
+Bilirubin, Total     0.6               0.2 - 1.2          mg/dL
+Alkaline Phosphatase 68                44 - 121           U/L
+AST (SGOT)           22                10 - 40            U/L
+ALT (SGPT)           26                9 - 46             U/L
+          </pre>
+          <div class="text-[11px] text-teal-400 flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i> Text extracted via PyMuPDF with digital stream confidence: 100%
+          </div>
+        </div>
+
+        <!-- Right: Structured Values Inspector -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <h3 class="text-sm font-bold text-slate-900">Extracted Entity Inspector</h3>
+            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">All Items Mapped</span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3 rounded-lg border border-rose-200 bg-rose-50/50">
+              <div class="flex items-center justify-between font-bold text-slate-900">
+                <span>Glucose, Fasting</span>
+                <span class="text-rose-700 bg-rose-100 px-2 py-0.5 rounded text-[10px]">HIGH (145 > 99)</span>
+              </div>
+              <div class="text-slate-600 mt-1">Raw match: <code class="text-slate-800 bg-white px-1 py-0.5 rounded border">Glucose, Fasting  145  HIGH  70 - 99 mg/dL</code></div>
+              <div class="text-[11px] text-slate-500 mt-1">Classification rule: Source Max Bound 99 mg/dL exceeded.</div>
+            </div>
+
+            <div class="p-3 rounded-lg border border-blue-200 bg-blue-50/50">
+              <div class="flex items-center justify-between font-bold text-slate-900">
+                <span>Potassium</span>
+                <span class="text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-[10px]">LOW (3.2 < 3.5)</span>
+              </div>
+              <div class="text-slate-600 mt-1">Raw match: <code class="text-slate-800 bg-white px-1 py-0.5 rounded border">Potassium  3.2  LOW  3.5 - 5.1 mmol/L</code></div>
+              <div class="text-[11px] text-slate-500 mt-1">Classification rule: Source Min Bound 3.5 mmol/L not met.</div>
+            </div>
+
+            <div class="p-3 rounded-lg border border-slate-200 bg-slate-50">
+              <div class="flex items-center justify-between font-bold text-slate-900">
+                <span>Sodium</span>
+                <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">NORMAL</span>
+              </div>
+              <div class="text-slate-600 mt-1">Raw match: <code class="text-slate-800 bg-white px-1 py-0.5 rounded border">Sodium  139  136 - 145 mmol/L</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 8: AI CLINICAL SUMMARY -->
+    <section id="view-summary" class="space-y-6 hidden">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Responsible AI Clinical Summary</h2>
+          <p class="text-xs text-slate-500">Synthesizes laboratory findings in clear, non-diagnostic plain language</p>
+        </div>
+        <button onclick="downloadClinicalPDF()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Export Report
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- AI Non-Diagnostic Overview Card -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <div class="flex items-center gap-2 text-teal-800">
+            <i data-lucide="file-text" class="w-5 h-5 text-teal-600"></i>
+            <h3 class="text-base font-bold text-slate-900">Clinical Record Overview</h3>
+          </div>
+          <p class="text-sm text-slate-700 leading-relaxed">
+            This record incorporates patient intake history and laboratory reports. Most hematologic and kidney function markers fall within their respective laboratory-provided reference bounds. Any laboratory markers identified outside source reference ranges are highlighted for physician review.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div class="border border-rose-200 bg-rose-50/40 p-4 rounded-xl">
+              <h4 class="text-xs font-bold text-rose-900 flex items-center gap-1.5 mb-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600"></i> Findings Outside Source Reference Range
+              </h4>
+              <ul id="summary-abnormal-list" class="text-xs text-rose-800 space-y-1.5 list-disc pl-4">
+                <li><strong>Fasting Glucose (145 mg/dL):</strong> Exceeds the source laboratory reference interval of 70–99 mg/dL.</li>
+                <li><strong>Potassium (3.2 mmol/L):</strong> Below the source laboratory reference interval of 3.5–5.1 mmol/L.</li>
+              </ul>
+            </div>
+
+            <div class="border border-emerald-200 bg-emerald-50/40 p-4 rounded-xl">
+              <h4 class="text-xs font-bold text-emerald-900 flex items-center gap-1.5 mb-2">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i> Findings Within Normal Limits
+              </h4>
+              <ul class="text-xs text-emerald-800 space-y-1.5 list-disc pl-4">
+                <li>Complete Blood Count parameters are within reference intervals.</li>
+                <li>Kidney biomarkers (Creatinine, BUN) are stable.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Curated Doctor Discussion Questions -->
+        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl border border-teal-200 p-6 shadow-xs space-y-3">
+          <div class="flex items-center gap-2 text-teal-900 font-bold text-sm">
+            <i data-lucide="help-circle" class="w-5 h-5 text-teal-600"></i>
+            Suggested Questions for Your Next Healthcare Provider Visit
+          </div>
+          <p class="text-xs text-teal-800">
+            MedLens generated these specific questions based on your verified findings to help guide your physician consultation:
+          </p>
+          <div class="space-y-2 text-xs text-slate-800 font-medium">
+            <div class="p-3 bg-white rounded-lg border border-teal-200/80 flex items-start gap-2">
+              <span class="text-teal-600 font-bold font-mono">1.</span>
+              <span>"What further evaluation is recommended regarding laboratory markers outside reference limits?"</span>
+            </div>
+            <div class="p-3 bg-white rounded-lg border border-teal-200/80 flex items-start gap-2">
+              <span class="text-teal-600 font-bold font-mono">2.</span>
+              <span>"Do my reported symptoms correlate with any of these observed values?"</span>
+            </div>
+            <div class="p-3 bg-white rounded-lg border border-teal-200/80 flex items-start gap-2">
+              <span class="text-teal-600 font-bold font-mono">3.</span>
+              <span>"Should we schedule a follow-up panel in 4 to 8 weeks to re-evaluate these markers?"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 9: MULTI-REPORT TRAJECTORY & COMPARISON -->
+    <section id="view-trajectory" class="space-y-6 hidden">
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Multi-Report Analyte Trajectory</h2>
+        <p class="text-xs text-slate-500">Track shifts and longitudinal trends across serial lab encounters</p>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+            <tr>
+              <th class="py-3 px-4">Analyte</th>
+              <th class="py-3 px-4">Report 1 (2025-11-10)</th>
+              <th class="py-3 px-4">Report 2 (2026-02-14)</th>
+              <th class="py-3 px-4">Observed Shift (Delta)</th>
+              <th class="py-3 px-4">Longitudinal Trend</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr>
+              <td class="py-3 px-4 font-bold text-slate-900">Fasting Glucose</td>
+              <td class="py-3 px-4 font-mono text-slate-600">118 mg/dL</td>
+              <td class="py-3 px-4 font-mono font-bold text-rose-600">145 mg/dL</td>
+              <td class="py-3 px-4 font-mono font-bold text-rose-600">+27 mg/dL (+22.8%)</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 text-rose-600 font-bold text-[11px]">
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Upward Shift
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 font-bold text-slate-900">Serum Potassium</td>
+              <td class="py-3 px-4 font-mono text-slate-600">3.8 mmol/L</td>
+              <td class="py-3 px-4 font-mono font-bold text-blue-600">3.2 mmol/L</td>
+              <td class="py-3 px-4 font-mono font-bold text-blue-600">-0.6 mmol/L (-15.7%)</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 text-blue-600 font-bold text-[11px]">
+                  <i data-lucide="trending-down" class="w-3.5 h-3.5"></i> Downward Shift
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 font-bold text-slate-900">Hemoglobin</td>
+              <td class="py-3 px-4 font-mono text-slate-600">13.6 g/dL</td>
+              <td class="py-3 px-4 font-mono text-slate-600">13.8 g/dL</td>
+              <td class="py-3 px-4 font-mono text-slate-600">+0.2 g/dL (+1.4%)</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 text-slate-500 text-[11px]">
+                  <i data-lucide="minus" class="w-3.5 h-3.5"></i> Stable
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 font-bold text-slate-900">Serum Creatinine</td>
+              <td class="py-3 px-4 font-mono text-slate-600">0.82 mg/dL</td>
+              <td class="py-3 px-4 font-mono text-slate-600">0.85 mg/dL</td>
+              <td class="py-3 px-4 font-mono text-slate-600">+0.03 mg/dL (+3.6%)</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 text-slate-500 text-[11px]">
+                  <i data-lucide="minus" class="w-3.5 h-3.5"></i> Stable
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW 10: AUDIT TIMELINE -->
+    <section id="view-timeline" class="space-y-6 hidden">
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Immutable Audit & Provenance Timeline</h2>
+        <p class="text-xs text-slate-500">Full forensic audit trail of all ingestion, extraction, and verification actions</p>
+      </div>
+
+      <div class="space-y-4 max-w-3xl">
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-xs flex-shrink-0">1</div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 flex-1 shadow-xs">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-bold text-slate-900">Patient Intake Recorded</span>
+              <span class="text-slate-400 font-mono">2026-09-05 07:15:22 UTC</span>
+            </div>
+            <p class="text-xs text-slate-600">Demographics, symptoms, and medication list captured with provenance tag <code>USER_PROVIDED</code>.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">2</div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 flex-1 shadow-xs">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-bold text-slate-900">PDF Ingestion: CMP_Report_2026_02.pdf</span>
+              <span class="text-slate-400 font-mono">2026-09-05 07:18:04 UTC</span>
+            </div>
+            <p class="text-xs text-slate-600">14 tests extracted. PyMuPDF digital text stream parsed with 100% confidence.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs flex-shrink-0">3</div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 flex-1 shadow-xs">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-bold text-slate-900">Conflict Raised: Demographic Age</span>
+              <span class="text-slate-400 font-mono">2026-09-05 07:18:05 UTC</span>
+            </div>
+            <p class="text-xs text-slate-600">Automated conflict detector identified age discrepancy (45 intake vs 47 report).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 11: RESPONSIBLE AI ETHICS -->
+    <section id="view-ethics" class="space-y-6 hidden">
+      <div class="pb-4 border-b border-slate-200">
+        <h2 class="text-xl font-bold text-slate-900">Responsible AI & Clinical Governance</h2>
+        <p class="text-xs text-slate-500">Core architectural guardrails ensuring medical safety, zero hallucinations, and auditability</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-2">
+          <div class="flex items-center gap-2 text-teal-700 font-bold text-sm">
+            <i data-lucide="shield-check" class="w-5 h-5 text-teal-600"></i>
+            Deterministic Reference Bounds
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            MedLens strictly forbids AI models from generating, estimating, or looking up standard reference ranges. All interval comparisons are executed by a pure deterministic mathematical evaluator against text explicitly printed in the uploaded report.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-2">
+          <div class="flex items-center gap-2 text-rose-700 font-bold text-sm">
+            <i data-lucide="ban" class="w-5 h-5 text-rose-600"></i>
+            Zero Medical Diagnosis Guarantee
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Prompt templates enforce strict negative constraints prohibiting disease diagnostic terms, medication dosage proposals, or clinical management instructions.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-2">
+          <div class="flex items-center gap-2 text-indigo-700 font-bold text-sm">
+            <i data-lucide="quote" class="w-5 h-5 text-indigo-600"></i>
+            End-to-End Source Provenance
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Every clinical data point maintains an immutable audit pointer containing the filename, page number, bounding coordinates, and verbatim source snippet.
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-2">
+          <div class="flex items-center gap-2 text-amber-700 font-bold text-sm">
+            <i data-lucide="user-check" class="w-5 h-5 text-amber-600"></i>
+            Human-in-the-Loop Review
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Extracted biomarkers are routed through a dedicated validation queue, allowing clinicians or patients to verify, correct, or reject data points before integration.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 4. MODAL: ADD NEW PATIENT                  -->
+  <!-- ========================================== -->
+  <div id="add-patient-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 border border-slate-200 overflow-y-auto max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5 text-teal-800">
+          <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Add New Patient Profile</h3>
+            <p class="text-[11px] text-slate-500">Record intake with provenance tagged as <span class="font-mono text-teal-700 font-semibold">USER_PROVIDED</span></p>
+          </div>
+        </div>
+        <button onclick="closeAddPatientModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="newPatientForm" onsubmit="handleAddNewPatient(event)" class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Full Name *</label>
+            <input type="text" id="new-name" required placeholder="e.g. Robert Taylor" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Age *</label>
+              <input type="number" id="new-age" required min="0" max="130" placeholder="62" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Sex *</label>
+              <select id="new-sex" class="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+                <option value="Female">Female</option>
+                <option value="Male" selected>Male</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Date of Birth</label>
+          <input type="date" id="new-dob" value="1964-08-15" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Current Symptoms</label>
+          <input type="text" id="new-symptoms" placeholder="e.g. Mild shortness of breath upon exertion, bilateral ankle edema" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Existing Conditions</label>
+            <textarea id="new-conditions" rows="2" placeholder="e.g. Type 2 Diabetes Mellitus, Hyperlipidemia" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none"></textarea>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Known Allergies</label>
+            <textarea id="new-allergies" rows="2" placeholder="e.g. Sulfa antibiotics (rash)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Current Medications</label>
+          <textarea id="new-medications" rows="2" placeholder="e.g. Metformin 1000mg BID, Atorvastatin 20mg QPM" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeAddPatientModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> Create Patient Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD NEW LAB TEST                    -->
+  <!-- ========================================== -->
+  <div id="add-test-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 overflow-y-auto max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5 text-teal-800">
+          <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
+            <i data-lucide="flask-conical" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Add Laboratory Test Result</h3>
+            <p class="text-[11px] text-slate-500">Adding to active patient: <strong id="new-test-patient-name" class="text-teal-700 font-semibold">Patient</strong></p>
+          </div>
+        </div>
+        <button onclick="closeAddTestModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="newTestForm" onsubmit="handleAddNewTest(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Test / Analyte Name *</label>
+          <input type="text" id="test-name" required placeholder="e.g. Hemoglobin A1c, Vitamin D, TSH" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Measured Result Value *</label>
+            <input type="text" id="test-val" required placeholder="e.g. 5.9, 142, 3.8" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono font-bold focus:ring-1 focus:ring-teal-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Measurement Unit *</label>
+            <input type="text" id="test-unit" required placeholder="e.g. %, mg/dL, mmol/L" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-1 focus:ring-teal-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">
+            Source Reference Range *
+            <span class="text-[10px] text-slate-400 font-normal">(Printed on lab report, e.g. 4.0 - 5.6 or < 5.7)</span>
+          </label>
+          <input type="text" id="test-range" required placeholder="e.g. 4.0 - 5.6" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono focus:ring-1 focus:ring-teal-500 focus:outline-none">
+          <p class="text-[10px] text-amber-700 mt-1 flex items-center gap-1">
+            <i data-lucide="info" class="w-3 h-3"></i>
+            Never invent a range. Status (NORMAL, HIGH, LOW) is calculated strictly against this range.
+          </p>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Document / Lab Source Origin</label>
+          <input type="text" id="test-doc" placeholder="e.g. LabCorp_Panel_2026.pdf or Clinician Intake" value="Manual Clinical Intake" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeAddTestModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Save & Evaluate Test
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 5. GLOBAL PROVENANCE MODAL                 -->
+  <!-- ========================================== -->
+  <div id="provenance-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2 text-teal-800">
+          <i data-lucide="microscope" class="w-5 h-5 text-teal-600"></i>
+          <h3 class="text-sm font-bold text-slate-900">Source Provenance & Citation</h3>
+        </div>
+        <button onclick="closeProvenanceModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <span class="text-slate-400 font-medium">Analyte Name:</span>
+          <div id="modal-analyte" class="text-sm font-bold text-slate-900 mt-0.5">Glucose, Fasting</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <div>
+            <span class="text-slate-500">Value & Unit:</span>
+            <div id="modal-val" class="font-mono font-bold text-slate-900">145 mg/dL</div>
+          </div>
+          <div>
+            <span class="text-slate-500">Source Range:</span>
+            <div id="modal-range" class="font-mono font-bold text-slate-900">70 - 99 mg/dL</div>
+          </div>
+        </div>
+
+        <div>
+          <span class="text-slate-500">Document Origin:</span>
+          <div id="modal-doc" class="font-semibold text-slate-800 mt-0.5">CMP_Report_2026_02.pdf (Page 1, Item #5)</div>
+        </div>
+
+        <div>
+          <span class="text-slate-500">Verbatim OCR Source Quote:</span>
+          <div id="modal-quote" class="mt-1 p-2.5 bg-slate-900 text-teal-300 font-mono text-[11px] rounded-lg border border-slate-800">
+            "Glucose, Fasting    145  HIGH    70 - 99    mg/dL"
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <span class="text-[11px] text-slate-500 flex items-center gap-1">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> Provenance Verified
+          </span>
+          <button onclick="closeProvenanceModal()" class="px-4 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. JAVASCRIPT STATE ENGINE                 -->
+  <!-- ========================================== -->
+  <script>
+    // --- Central Patient Repository ---
+    const PATIENTS = {
+      patient_a: {
+        id: "patient_a",
+        recordId: "ML-2026-089",
+        name: "Sarah Jenkins",
+        age: 45,
+        sex: "Female",
+        dob: "1980-04-12",
+        sub: "45 Years • Female • DOB: 1980-04-12 • Record ID: #ML-2026-089",
+        symptoms: "Persistent fatigue, increased thirst (polydipsia), mild morning stiffness",
+        conditions: "Essential Hypertension, Pre-diabetes",
+        allergies: "Penicillin (Severe hives), Latex",
+        medications: "Lisinopril 10mg PO QD, Metformin 500mg PO BID",
+        records: [
+          { name: "Glucose, Fasting", val: "145", unit: "mg/dL", range: "70 - 99", status: "HIGH", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Glucose, Fasting    145  HIGH    70 - 99    mg/dL" },
+          { name: "Potassium", val: "3.2", unit: "mmol/L", range: "3.5 - 5.1", status: "LOW", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Potassium           3.2  LOW     3.5 - 5.1  mmol/L" },
+          { name: "Sodium", val: "139", unit: "mmol/L", range: "136 - 145", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Sodium              139          136 - 145  mmol/L" },
+          { name: "Chloride", val: "101", unit: "mmol/L", range: "98 - 107", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Chloride            101          98 - 107   mmol/L" },
+          { name: "Carbon Dioxide", val: "24", unit: "mmol/L", range: "22 - 29", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Carbon Dioxide      24           22 - 29    mmol/L" },
+          { name: "Blood Urea Nitrogen (BUN)", val: "16", unit: "mg/dL", range: "7 - 20", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "BUN                 16           7 - 20     mg/dL" },
+          { name: "Creatinine", val: "0.85", unit: "mg/dL", range: "0.50 - 1.10", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Creatinine          0.85         0.50 - 1.10 mg/dL" },
+          { name: "Calcium", val: "9.4", unit: "mg/dL", range: "8.6 - 10.2", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CMP_Report_2026_02.pdf", quote: "Calcium             9.4          8.6 - 10.2 mg/dL" },
+          { name: "WBC Count", val: "6.8", unit: "x10^3/uL", range: "4.0 - 11.0", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CBC_Panel_2026_02.pdf", quote: "WBC                 6.8          4.0 - 11.0 x10^3/uL" },
+          { name: "RBC Count", val: "4.45", unit: "x10^6/uL", range: "4.00 - 5.20", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CBC_Panel_2026_02.pdf", quote: "RBC                 4.45         4.00 - 5.20 x10^6/uL" },
+          { name: "Hemoglobin", val: "13.8", unit: "g/dL", range: "12.0 - 16.0", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CBC_Panel_2026_02.pdf", quote: "Hemoglobin          13.8         12.0 - 16.0 g/dL" },
+          { name: "Hematocrit", val: "41.2", unit: "%", range: "37.0 - 47.0", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CBC_Panel_2026_02.pdf", quote: "Hematocrit          41.2         37.0 - 47.0 %" },
+          { name: "Platelet Count", val: "265", unit: "x10^3/uL", range: "150 - 450", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "CBC_Panel_2026_02.pdf", quote: "Platelets           265          150 - 450  x10^3/uL" }
+        ]
+      },
+      patient_b: {
+        id: "patient_b",
+        recordId: "ML-2026-112",
+        name: "Marcus Chen",
+        age: 58,
+        sex: "Male",
+        dob: "1968-01-20",
+        sub: "58 Years • Male • DOB: 1968-01-20 • Record ID: #ML-2026-112",
+        symptoms: "Occasional mild chest tightness with intense cardio exercise",
+        conditions: "Hyperlipidemia, Family History of CAD",
+        allergies: "No known drug allergies (NKDA)",
+        medications: "Atorvastatin 20mg PO QPM, Baby Aspirin 81mg QD",
+        records: [
+          { name: "Total Cholesterol", val: "228", unit: "mg/dL", range: "< 200", status: "HIGH", tag: "REPORT_EXTRACTED", doc: "Lipid_Panel_2026.pdf", quote: "Total Cholesterol   228  HIGH    < 200      mg/dL" },
+          { name: "Triglycerides", val: "175", unit: "mg/dL", range: "Not Specified", status: "UNKNOWN", tag: "REPORT_EXTRACTED", doc: "Lipid_Panel_2026.pdf", quote: "Triglycerides       175          Not Specified mg/dL" },
+          { name: "HDL Cholesterol", val: "42", unit: "mg/dL", range: "> 40", status: "NORMAL", tag: "REPORT_EXTRACTED", doc: "Lipid_Panel_2026.pdf", quote: "HDL Cholesterol     42           > 40       mg/dL" },
+          { name: "LDL Calculated", val: "151", unit: "mg/dL", range: "< 100", status: "HIGH", tag: "REPORT_EXTRACTED", doc: "Lipid_Panel_2026.pdf", quote: "LDL Calculated      151  HIGH    < 100      mg/dL" }
+        ]
+      }
+    };
+
+    let currentPatient = 'patient_a';
+    let currentFilter = 'ALL';
+
+    // --- Dynamic Patient Select Dropdown ---
+    function renderPatientSelect() {
+      const select = document.getElementById('patientSelect');
+      select.innerHTML = '';
+      Object.keys(PATIENTS).forEach(key => {
+        const p = PATIENTS[key];
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.innerText = `${p.name} (${p.age}${p.sex ? p.sex[0] : ''}) — ${p.records.length} Tests`;
+        if (key === currentPatient) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    // --- Render Patient Directory Table on Dashboard ---
+    function renderPatientDirectory() {
+      const tbody = document.getElementById('patient-directory-tbody');
+      const countSpan = document.getElementById('directory-patient-count');
+      const totalCountMetric = document.getElementById('metric-total-patients');
+      
+      const patientKeys = Object.keys(PATIENTS);
+      if (countSpan) countSpan.innerText = patientKeys.length;
+      if (totalCountMetric) totalCountMetric.innerText = patientKeys.length;
+
+      tbody.innerHTML = '';
+
+      patientKeys.forEach(key => {
+        const p = PATIENTS[key];
+        const isCurrent = key === currentPatient;
+        const tr = document.createElement('tr');
+        tr.className = isCurrent ? 'bg-teal-50/60 transition' : 'hover:bg-slate-50 transition';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-semibold text-slate-900">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
+                ${p.name.charAt(0)}
+              </div>
+              <div>
+                <span class="font-bold text-slate-900">${p.name}</span>
+                <span class="block text-[10px] text-slate-400 font-mono">#${p.recordId || key}</span>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-slate-600 font-mono">
+            ${p.age} yrs • ${p.sex} • ${p.dob || 'N/A'}
+          </td>
+          <td class="py-3 px-4 text-slate-600 max-w-xs truncate" title="${p.conditions || 'None'}">
+            ${p.conditions || 'None reported'}
+          </td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded-full font-mono text-[11px] font-bold ${p.records.length > 0 ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-500'}">
+              ${p.records.length} Lab Records
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            ${isCurrent 
+              ? '<span class="inline-flex items-center gap-1 text-teal-700 font-bold text-xs"><span class="w-2 h-2 rounded-full bg-teal-500"></span> Current Active</span>'
+              : '<span class="text-slate-400 text-xs">Available</span>'
+            }
+          </td>
+          <td class="py-3 px-4 text-right">
+            <div class="flex items-center justify-end gap-1.5">
+              ${!isCurrent 
+                ? `<button onclick="handlePatientChange('${key}')" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded font-semibold text-xs transition">Select</button>` 
+                : `<button onclick="switchView('records')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded font-semibold text-xs transition">View Labs</button>`
+              }
+              ${patientKeys.length > 1 
+                ? `<button onclick="deletePatient('${key}')" title="Delete Patient Record" class="p-1 text-slate-400 hover:text-rose-600 rounded transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`
+                : ''
+              }
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    // --- Modal Handlers ---
+    function openAddPatientModal() {
+      document.getElementById('add-patient-modal').classList.remove('hidden');
+      document.getElementById('new-name').focus();
+      lucide.createIcons();
+    }
+
+    function closeAddPatientModal() {
+      document.getElementById('add-patient-modal').classList.add('hidden');
+      document.getElementById('newPatientForm').reset();
+    }
+
+    // --- Add Test Modal Handlers ---
+    function openAddTestModal() {
+      const p = PATIENTS[currentPatient];
+      document.getElementById('new-test-patient-name').innerText = p ? p.name : 'Active Patient';
+      document.getElementById('add-test-modal').classList.remove('hidden');
+      document.getElementById('test-name').focus();
+      lucide.createIcons();
+    }
+
+    function closeAddTestModal() {
+      document.getElementById('add-test-modal').classList.add('hidden');
+      document.getElementById('newTestForm').reset();
+    }
+
+    // --- Add New Lab Test Logic with Deterministic Classifier ---
+    function handleAddNewTest(e) {
+      e.preventDefault();
+
+      const testName = document.getElementById('test-name').value.trim();
+      const testVal = document.getElementById('test-val').value.trim();
+      const testUnit = document.getElementById('test-unit').value.trim();
+      const testRange = document.getElementById('test-range').value.trim();
+      const testDoc = document.getElementById('test-doc').value.trim() || "Manual Clinical Intake";
+
+      if (!testName || !testVal || !testUnit) {
+        alert("Please fill in the test name, result value, and unit.");
+        return;
+      }
+
+      // 1. Pure Deterministic Reference Range Classifier (Strictly Source-Derived)
+      let status = "NORMAL";
+      const numVal = parseFloat(testVal);
+
+      if (!testRange || testRange.toLowerCase().includes("not specified") || testRange.toLowerCase().includes("n/a")) {
+        status = "UNKNOWN";
+      } else if (!isNaN(numVal)) {
+        // Match standard formats: "min - max", "< max", "> min"
+        const intervalMatch = testRange.match(/^([0-9.]+)\s*-\s*([0-9.]+)$/);
+        const lessMatch = testRange.match(/^<\s*([0-9.]+)$/);
+        const greaterMatch = testRange.match(/^>\s*([0-9.]+)$/);
+
+        if (intervalMatch) {
+          const min = parseFloat(intervalMatch[1]);
+          const max = parseFloat(intervalMatch[2]);
+          if (numVal < min) status = "LOW";
+          else if (numVal > max) status = "HIGH";
+          else status = "NORMAL";
+        } else if (lessMatch) {
+          const max = parseFloat(lessMatch[1]);
+          if (numVal > max) status = "HIGH";
+          else status = "NORMAL";
+        } else if (greaterMatch) {
+          const min = parseFloat(greaterMatch[1]);
+          if (numVal < min) status = "LOW";
+          else status = "NORMAL";
+        }
+      }
+
+      const quote = `${testName}    ${testVal}  ${status !== 'NORMAL' && status !== 'UNKNOWN' ? status : ''}    ${testRange}    ${testUnit}`;
+
+      const newRecord = {
+        name: testName,
+        val: testVal,
+        unit: testUnit,
+        range: testRange || "Not Specified",
+        status: status,
+        tag: "USER_PROVIDED",
+        doc: testDoc,
+        quote: quote
+      };
+
+      // Add to beginning of active patient's records
+      PATIENTS[currentPatient].records.unshift(newRecord);
+
+      // Refresh all counters & table views
+      document.getElementById('metric-total-tests').innerText = PATIENTS[currentPatient].records.length;
+      const abnormalCount = PATIENTS[currentPatient].records.filter(r => r.status === 'HIGH' || r.status === 'LOW').length;
+      document.getElementById('metric-abnormal').innerText = abnormalCount;
+
+      renderRecords();
+      renderPatientSelect();
+      renderPatientDirectory();
+      closeAddTestModal();
+
+      alert(`✅ Test "${testName}" successfully added!\nStatus: ${status} (evaluated strictly against "${testRange}")\nTotal tests for ${PATIENTS[currentPatient].name}: ${PATIENTS[currentPatient].records.length}`);
+    }
+
+    // --- Add New Patient Logic ---
+    function handleAddNewPatient(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('new-name').value.trim();
+      const age = parseInt(document.getElementById('new-age').value) || 0;
+      const sex = document.getElementById('new-sex').value;
+      const dob = document.getElementById('new-dob').value;
+      const symptoms = document.getElementById('new-symptoms').value.trim() || "None reported";
+      const conditions = document.getElementById('new-conditions').value.trim() || "None reported";
+      const allergies = document.getElementById('new-allergies').value.trim() || "None known";
+      const medications = document.getElementById('new-medications').value.trim() || "None";
+
+      if (!name) {
+        alert("Please enter a patient name.");
+        return;
+      }
+
+      // Generate unique key and ID
+      const newKey = "patient_" + Date.now();
+      const recordNum = Math.floor(100 + Math.random() * 900);
+      const recordId = `ML-2026-${recordNum}`;
+
+      PATIENTS[newKey] = {
+        id: newKey,
+        recordId: recordId,
+        name: name,
+        age: age,
+        sex: sex,
+        dob: dob,
+        sub: `${age} Years • ${sex} • DOB: ${dob} • Record ID: #${recordId}`,
+        symptoms: symptoms,
+        conditions: conditions,
+        allergies: allergies,
+        medications: medications,
+        records: [] // Start with fresh records ready for report upload
+      };
+
+      // Switch to new patient
+      currentPatient = newKey;
+
+      // Update UI components
+      renderPatientSelect();
+      renderPatientDirectory();
+      handlePatientChange(newKey);
+      closeAddPatientModal();
+
+      alert(`✅ Patient record for "${name}" registered successfully!\nProvenance tagged as USER_PROVIDED.`);
+    }
+
+    function deletePatient(key) {
+      if (Object.keys(PATIENTS).length <= 1) {
+        alert("Cannot delete the only patient record in session.");
+        return;
+      }
+      const pName = PATIENTS[key].name;
+      if (confirm(`Are you sure you want to delete patient record for "${pName}"?`)) {
+        delete PATIENTS[key];
+        if (currentPatient === key) {
+          currentPatient = Object.keys(PATIENTS)[0];
+        }
+        renderPatientSelect();
+        renderPatientDirectory();
+        handlePatientChange(currentPatient);
+      }
+    }
+
+    // --- Switch Active Patient ---
+    function handlePatientChange(pKey) {
+      currentPatient = pKey;
+      const p = PATIENTS[pKey];
+      if (!p) return;
+
+      document.getElementById('dash-patient-name').innerText = p.name;
+      document.getElementById('dash-patient-sub').innerText = p.sub;
+      document.getElementById('dash-conditions').innerHTML = `<strong>Conditions:</strong> ${p.conditions}`;
+      document.getElementById('dash-allergies').innerHTML = `<strong>Allergies:</strong> ${p.allergies}`;
+      document.getElementById('dash-medications').innerHTML = `<strong>Medications:</strong> ${p.medications}`;
+
+      // Intake form fields
+      document.getElementById('intake-name').value = p.name;
+      document.getElementById('intake-age').value = p.age;
+      document.getElementById('intake-sex').value = p.sex;
+      document.getElementById('intake-symptoms').value = p.symptoms;
+      document.getElementById('intake-conditions').value = p.conditions;
+      document.getElementById('intake-allergies').value = p.allergies;
+      document.getElementById('intake-meds').value = p.medications;
+
+      // Update metrics
+      document.getElementById('metric-total-tests').innerText = p.records.length;
+      const abnormalCount = p.records.filter(r => r.status === 'HIGH' || r.status === 'LOW').length;
+      document.getElementById('metric-abnormal').innerText = abnormalCount;
+
+      renderRecords();
+      renderPatientDirectory();
+      renderPatientSelect();
+    }
+
+    // --- Navigation View Switcher ---
+    function switchView(viewName) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      const activeSec = document.getElementById('view-' + viewName);
+      if (activeSec) activeSec.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-50', 'text-teal-700', 'font-semibold', 'border-b-2', 'border-teal-600');
+        btn.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById('nav-' + viewName);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-teal-50', 'text-teal-700', 'font-semibold', 'border-b-2', 'border-teal-600');
+        activeBtn.classList.remove('text-slate-600');
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- Render Lab Table ---
+    function renderRecords() {
+      const tbody = document.getElementById('lab-table-body');
+      const p = PATIENTS[currentPatient];
+      const data = p ? p.records : [];
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-10 text-slate-400">
+              <i data-lucide="file-question" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+              No medical laboratory reports ingested yet for ${p ? p.name : 'this patient'}.<br>
+              <button onclick="switchView('upload')" class="mt-3 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700">Upload or Load Demo Report</button>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      const filtered = data.filter(item => {
+        if (currentFilter === 'ALL') return true;
+        if (currentFilter === 'ABNORMAL') return item.status === 'HIGH' || item.status === 'LOW';
+        if (currentFilter === 'UNKNOWN') return item.status === 'UNKNOWN';
+        return true;
+      });
+
+      filtered.forEach((r) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition';
+
+        let badgeClass = 'bg-emerald-100 text-emerald-800';
+        if (r.status === 'HIGH') badgeClass = 'bg-rose-100 text-rose-800';
+        if (r.status === 'LOW') badgeClass = 'bg-blue-100 text-blue-800';
+        if (r.status === 'UNKNOWN') badgeClass = 'bg-amber-100 text-amber-800';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-semibold text-slate-900">${r.name}</td>
+          <td class="py-3 px-4 font-mono font-bold ${r.status === 'HIGH' ? 'text-rose-600' : r.status === 'LOW' ? 'text-blue-600' : 'text-slate-800'}">${r.val}</td>
+          <td class="py-3 px-4 text-slate-500 font-mono">${r.unit}</td>
+          <td class="py-3 px-4 font-mono text-slate-700">${r.range}</td>
+          <td class="py-3 px-4">
+            <span class="${badgeClass} text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">${r.status}</span>
+          </td>
+          <td class="py-3 px-4">
+            <span class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-mono px-2 py-0.5 rounded">${r.tag}</span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="openProvenance('${r.name}', '${r.val}', '${r.unit}', '${r.range}', '${r.doc}', '${escape(r.quote)}')" class="text-teal-600 hover:text-teal-800 font-semibold text-xs inline-flex items-center gap-1">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i> Inspect
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    function filterRecords(type) {
+      currentFilter = type;
+      ['all', 'abnormal', 'unknown'].forEach(t => {
+        const b = document.getElementById('filter-' + t);
+        if (t === type.toLowerCase()) {
+          b.className = 'px-2.5 py-1 rounded bg-white font-semibold text-slate-800 shadow-2xs';
+        } else {
+          b.className = 'px-2.5 py-1 rounded text-slate-600 hover:text-slate-900';
+        }
+      });
+      renderRecords();
+    }
+
+    // --- Provenance Modal ---
+    function openProvenance(name, val, unit, range, doc, quoteEscaped) {
+      document.getElementById('modal-analyte').innerText = name;
+      document.getElementById('modal-val').innerText = val + ' ' + unit;
+      document.getElementById('modal-range').innerText = range;
+      document.getElementById('modal-doc').innerText = doc;
+      document.getElementById('modal-quote').innerText = unescape(quoteEscaped);
+      document.getElementById('provenance-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeProvenanceModal() {
+      document.getElementById('provenance-modal').classList.add('hidden');
+    }
+
+    // --- Conflict Resolution ---
+    function resolveConflict(id, choice) {
+      const card = document.getElementById('conflict-card-' + id);
+      if (card) {
+        card.innerHTML = `
+          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between">
+            <span class="flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Discrepancy successfully resolved: Recorded as <strong>${choice.toUpperCase()}</strong></span>
+            <span class="text-slate-400 font-mono text-[10px]">Audit ID: #RES-9412</span>
+          </div>
+        `;
+      }
+      const banner = document.getElementById('dash-conflict-alert');
+      if (banner) banner.style.display = 'none';
+      const badge = document.getElementById('conflict-badge');
+      if (badge) badge.innerText = '0';
+      lucide.createIcons();
+    }
+
+    // --- Review Queue ---
+    function acceptReviewItem(id) {
+      const card = document.getElementById('review-card-' + id);
+      if (card) {
+        card.innerHTML = `
+          <div class="p-3 bg-emerald-50 text-emerald-800 rounded-lg text-xs font-semibold flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Biomarker verified and approved for permanent clinical record.
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function rejectReviewItem(id) {
+      const card = document.getElementById('review-card-' + id);
+      if (card) {
+        card.innerHTML = `
+          <div class="p-3 bg-rose-50 text-rose-800 rounded-lg text-xs font-semibold flex items-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4 text-rose-600"></i> Biomarker rejected and discarded from patient profile.
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function acceptAllQueue() {
+      acceptReviewItem(1);
+      acceptReviewItem(2);
+      const b = document.getElementById('review-badge');
+      if (b) b.innerText = '0';
+    }
+
+    // --- Demo Fast-Loaders ---
+    function loadDemoReport(type) {
+      const pBox = document.getElementById('processing-box');
+      pBox.classList.remove('hidden');
+      let pct = 20;
+      const bar = document.getElementById('proc-bar');
+      const pctText = document.getElementById('proc-percent');
+      const stepText = document.getElementById('proc-step');
+
+      const interval = setInterval(() => {
+        pct += 25;
+        if (pct >= 100) {
+          pct = 100;
+          clearInterval(interval);
+          stepText.innerText = 'Extraction Complete! 14 Biomarkers Evaluated.';
+          setTimeout(() => {
+            pBox.classList.add('hidden');
+            switchView('records');
+          }, 600);
+        }
+        bar.style.width = pct + '%';
+        pctText.innerText = pct + '%';
+        if (pct === 45) stepText.innerText = 'Step 2/4: PyMuPDF Digital Token OCR Stream...';
+        if (pct === 70) stepText.innerText = 'Step 3/4: Deterministic Reference Range Classifier...';
+      }, 250);
+    }
+
+    // --- Clinical PDF Generator Simulator ---
+    function downloadClinicalPDF() {
+      const p = PATIENTS[currentPatient];
+      alert(`Generating Clinical Summary PDF via ReportLab Engine for ${p ? p.name : 'Patient'}...\n\nDocument includes:\n• Verified Demographics & Intake Provenance\n• Structured Laboratory Findings with Source Reference Ranges\n• Non-Diagnostic AI Plain-Language Briefing\n• Mandatory Clinical Disclaimer`);
+    }
+
+    function resetDemoData() {
+      currentPatient = 'patient_a';
+      renderPatientSelect();
+      renderPatientDirectory();
+      handlePatientChange('patient_a');
+      switchView('dashboard');
+    }
+
+    function savePatientIntake() {
+      const p = PATIENTS[currentPatient];
+      if (p) {
+        p.name = document.getElementById('intake-name').value;
+        p.age = parseInt(document.getElementById('intake-age').value) || p.age;
+        p.sex = document.getElementById('intake-sex').value;
+        p.symptoms = document.getElementById('intake-symptoms').value;
+        p.conditions = document.getElementById('intake-conditions').value;
+        p.allergies = document.getElementById('intake-allergies').value;
+        p.medications = document.getElementById('intake-meds').value;
+        p.sub = `${p.age} Years • ${p.sex} • DOB: ${p.dob} • Record ID: #${p.recordId || currentPatient}`;
+        handlePatientChange(currentPatient);
+      }
+      alert("Patient intake updated! Source provenance updated to: USER_PROVIDED (Clinically Verified).");
+    }
+
+    // --- Init on Load ---
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPatientSelect();
+      renderPatientDirectory();
+      handlePatientChange(currentPatient);
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

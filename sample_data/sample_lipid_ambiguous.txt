@@ -1,0 +1,31 @@
+METROHEALTH DIAGNOSTIC LABORATORIES
+100 Medical Center Way, Suite 400
+CLIA ID: 99D1234567 | Lab Director: R. Sterling, MD
+
+PATIENT INFORMATION:
+Name: Jane Doe
+DOB: 1988-04-12 | Age: 38 | Sex: Female
+Specimen ID: SP-2026-9115
+Collection Date: 2026-09-02 08:00 AM
+Report Date: 2026-09-02 03:00 PM
+Ordering Physician: Dr. Alex Rivera, MD
+
+TEST NAME                       RESULT    FLAG    UNITS       REFERENCE RANGE
+-----------------------------------------------------------------------------
+LIPID & CARDIAC PROFILE
+Total Cholesterol                218              mg/dL       < 200
+HDL Cholesterol                  54               mg/dL       > 50
+LDL Cholesterol (Calc)           138              mg/dL       < 100
+Triglycerides                    162              mg/dL       Not Specified
+C-Reactive Protein (hs-CRP)      1.4              mg/dL       See Note*
+Serum Ferritin                   22               ng/mL       Ambiguous / Pending
+
+*NOTE ON hs-CRP:
+Relative cardiovascular risk assessment: Lower risk < 1.0, Average risk 1.0 - 3.0, Higher risk > 3.0.
+Triglyceride target not provided due to assay calibration.
+Ferritin re-assay scheduled.
+
+OBSERVATIONS:
+Lipid panel demonstrates moderate elevation in Total and LDL Cholesterol.
+Reference range for Triglycerides is not stated in source report.
+Ferritin reference status is pending laboratory verification.
